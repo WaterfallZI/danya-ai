@@ -1,6 +1,5 @@
-﻿"""
-Danya AI вЂ” Chat Server
-Full ChatGPT-like experience with OpenRouter backend
+"""
+Danya AI - Chat Server with OpenRouter backend
 """
 from flask import Flask, request, jsonify, session, send_from_directory, Response, stream_with_context
 from flask_cors import CORS
@@ -26,41 +25,37 @@ app.config.update(SQLALCHEMY_DATABASE_URI=_db_url, SQLALCHEMY_TRACK_MODIFICATION
 CORS(app, supports_credentials=True, origins=os.environ.get('ALLOWED_ORIGINS', '*').split(','))
 db = SQLAlchemy(app)
 
-# в”Ђв”Ђ Config в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
 OPENROUTER_URL     = 'https://openrouter.ai/api/v1/chat/completions'
 ADMIN_EMAIL        = os.environ.get('ADMIN_EMAIL', 'admin@danya.ai')
 ADMIN_PASS         = os.environ.get('ADMIN_PASSWORD', 'admin2026')
 
 MODELS = {
-    # Free tier — все используют deepseek-chat (бесплатный, стабильный)
-    'danya-1.0':        {'model': 'meta-llama/llama-3.3-70b-instruct:free',  'cost': 1,   'tier': 'free'},
-    'danya-1.7-mj':     {'model': 'meta-llama/llama-3.3-70b-instruct:free',  'cost': 1,   'tier': 'free'},
-    'danya-2.5-turbo':  {'model': 'meta-llama/llama-3.3-70b-instruct:free',  'cost': 1,   'tier': 'free'},
-    'danya-coala-3.7':  {'model': 'meta-llama/llama-3.3-70b-instruct:free',  'cost': 1,   'tier': 'free'},
-    'danya-g-4.4':      {'model': 'meta-llama/llama-3.3-70b-instruct:free',  'cost': 5,   'tier': 'free'},
-    'danya-coala-4.8':  {'model': 'meta-llama/llama-3.3-70b-instruct:free',  'cost': 10,  'tier': 'free'},
-    # Pro tier — deepseek-chat платный (лучше качество)
-    'danya-coala-5.0':  {'model': 'meta-llama/llama-3.3-70b-instruct:free',       'cost': 50,  'tier': 'pro'},
-    'danya-ai-5.5':     {'model': 'meta-llama/llama-3.3-70b-instruct:free',       'cost': 80,  'tier': 'pro'},
-    'danya-5.5-pro':    {'model': 'deepseek/deepseek-r1:free',         'cost': 100, 'tier': 'pro'},
-    'danya-6-turbo-pro':{'model': 'deepseek/deepseek-r1:free',         'cost': 150, 'tier': 'pro'},
+    'danya-1.0':        {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 1,   'tier': 'free'},
+    'danya-1.7-mj':     {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 1,   'tier': 'free'},
+    'danya-2.5-turbo':  {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 1,   'tier': 'free'},
+    'danya-coala-3.7':  {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 1,   'tier': 'free'},
+    'danya-g-4.4':      {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 5,   'tier': 'free'},
+    'danya-coala-4.8':  {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 10,  'tier': 'free'},
+    'danya-coala-5.0':  {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 50,  'tier': 'pro'},
+    'danya-ai-5.5':     {'model': 'meta-llama/llama-3.3-70b-instruct:free', 'cost': 80,  'tier': 'pro'},
+    'danya-5.5-pro':    {'model': 'deepseek/deepseek-r1:free',              'cost': 100, 'tier': 'pro'},
+    'danya-6-turbo-pro':{'model': 'deepseek/deepseek-r1:free',              'cost': 150, 'tier': 'pro'},
 }
 
 SYSTEM_PROMPTS = {
-    'danya-1.0':         'You are Danya 1.0, an AI assistant by Danya AI. Be helpful, friendly and concise. Always identify as Danya 1.0.',
-    'danya-1.7-mj':      'You are Danya 1.7 MJ, an AI assistant by Danya AI. Be creative and concise. Always identify as Danya 1.7 MJ.',
-    'danya-2.5-turbo':   'You are Danya 2.5 Turbo, a fast powerful AI by Danya AI. Be precise and helpful. Always identify as Danya 2.5 Turbo.',
-    'danya-coala-3.7':   'You are Danya Coala 3.7, a lightweight AI by Danya AI. Be quick and friendly. Always identify as Danya Coala 3.7.',
-    'danya-g-4.4':       'You are Danya G 4.4, an advanced AI by Danya AI. Be smart and detailed. Always identify as Danya G 4.4.',
-    'danya-coala-4.8':   'You are Danya Coala 4.8, a highly capable AI by Danya AI. Be thorough. Always identify as Danya Coala 4.8.',
-    'danya-coala-5.0':   'You are Danya Coala 5.0, a premium AI by Danya AI. Be intelligent and thorough. Always identify as Danya Coala 5.0.',
-    'danya-ai-5.5':      'You are Danya AI 5.5, a highly advanced AI by Danya AI. Be exceptionally precise. Always identify as Danya AI 5.5.',
-    'danya-5.5-pro':     'You are Danya 5.5 Pro, a top-tier AI by Danya AI. Be exceptionally powerful. Always identify as Danya 5.5 Pro.',
-    'danya-6-turbo-pro': 'You are Danya 6 Turbo Pro, THE MOST POWERFUL AI by Danya AI. Be exceptionally intelligent. Always identify as Danya 6 Turbo Pro.',
+    'danya-1.0':         'You are Danya 1.0 by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya 1.0.',
+    'danya-1.7-mj':      'You are Danya 1.7 MJ by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya 1.7 MJ.',
+    'danya-2.5-turbo':   'You are Danya 2.5 Turbo by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya 2.5 Turbo.',
+    'danya-coala-3.7':   'You are Danya Coala 3.7 by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya Coala 3.7.',
+    'danya-g-4.4':       'You are Danya G 4.4 by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya G 4.4.',
+    'danya-coala-4.8':   'You are Danya Coala 4.8 by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya Coala 4.8.',
+    'danya-coala-5.0':   'You are Danya Coala 5.0 by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya Coala 5.0.',
+    'danya-ai-5.5':      'You are Danya AI 5.5 by Danya AI. NEVER say you are Llama, Meta, or any other model. Always say you are Danya AI 5.5.',
+    'danya-5.5-pro':     'You are Danya 5.5 Pro by Danya AI. NEVER say you are DeepSeek or any other model. Always say you are Danya 5.5 Pro.',
+    'danya-6-turbo-pro': 'You are Danya 6 Turbo Pro, the most powerful AI by Danya AI. NEVER say you are DeepSeek or any other model. Always say you are Danya 6 Turbo Pro.',
 }
 
-# в”Ђв”Ђ Models в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class User(db.Model):
     __tablename__ = 'users'
     id            = db.Column(db.Integer, primary_key=True)
@@ -78,14 +73,12 @@ class User(db.Model):
 
     def set_password(self, pw): self.password_hash = generate_password_hash(pw)
     def check_password(self, pw): return bool(self.password_hash and check_password_hash(self.password_hash, pw))
-
     def to_dict(self):
         total = -1 if self.plan == 'ultra' else (self.credits or 0) + (self.bonus_credits or 0)
         return {'id': self.id, 'email': self.email, 'username': self.username,
                 'credits': self.credits or 0, 'bonus_credits': self.bonus_credits or 0,
                 'total_credits': total, 'plan': self.plan or 'free', 'is_admin': self.is_admin or False,
                 'created_at': self.created_at.isoformat() if self.created_at else None}
-
     def deduct(self, n=1):
         if self.plan == 'ultra': return
         if (self.bonus_credits or 0) >= n: self.bonus_credits -= n
@@ -94,7 +87,6 @@ class User(db.Model):
             t = (self.bonus_credits or 0) + (self.credits or 0)
             self.bonus_credits = 0; self.credits = max(0, t - n)
         db.session.commit()
-
     def has_credits(self, n=1):
         if self.plan == 'ultra': return True
         return ((self.credits or 0) + (self.bonus_credits or 0)) >= n
@@ -109,7 +101,6 @@ class Chat(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
     messages   = db.relationship('Message', backref='chat', lazy='dynamic', cascade='all, delete-orphan', order_by='Message.created_at')
-
     def to_dict(self, include_messages=False):
         d = {'id': self.id, 'title': self.title, 'model': self.model,
              'created_at': self.created_at.isoformat(), 'updated_at': self.updated_at.isoformat()}
@@ -125,7 +116,6 @@ class Message(db.Model):
     role       = db.Column(db.String(20), nullable=False)
     content    = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
     def to_dict(self):
         return {'id': self.id, 'role': self.role, 'content': self.content,
                 'created_at': self.created_at.isoformat()}
@@ -133,24 +123,6 @@ class Message(db.Model):
 
 with app.app_context():
     db.create_all()
-    # SQLite migration — add missing columns
-    try:
-        import sqlite3
-        db_path = os.path.join(os.path.dirname(__file__), 'instance', 'danya.db')
-        if not os.path.exists(os.path.dirname(db_path)):
-            db_path = 'danya.db'
-        if os.path.exists(db_path):
-            conn = sqlite3.connect(db_path)
-            cur = conn.cursor()
-            cols = [r[1] for r in cur.execute("PRAGMA table_info(users)").fetchall()]
-            if 'bonus_credits' not in cols:
-                cur.execute("ALTER TABLE users ADD COLUMN bonus_credits INTEGER DEFAULT 0")
-            if 'is_admin' not in cols:
-                cur.execute("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0")
-            conn.commit(); conn.close()
-    except Exception as e:
-        app.logger.warning(f'Migration: {e}')
-    # Create admin
     try:
         if not User.query.filter_by(email=ADMIN_EMAIL).first():
             a = User(email=ADMIN_EMAIL, username='Admin', credits=-1, bonus_credits=0, plan='ultra', is_admin=True)
@@ -160,7 +132,6 @@ with app.app_context():
         app.logger.warning(f'Admin creation skipped: {e}')
 
 
-# в”Ђв”Ђ Auth в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 def login_required(f):
     @wraps(f)
     def d(*args, **kwargs):
@@ -173,7 +144,6 @@ def login_required(f):
     return d
 
 
-# в”Ђв”Ђ Static в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/')
 def index(): return send_from_directory('.', 'index.html')
 
@@ -186,7 +156,6 @@ def static_files(f):
 def not_found(e): return jsonify({'error': 'Not found'}), 404
 
 
-# в”Ђв”Ђ Auth API в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     d = request.get_json(silent=True) or {}
@@ -199,8 +168,6 @@ def register():
         return jsonify({'error': 'Invalid email'}), 400
     if len(password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters'}), 400
-    if len(username) < 2 or len(username) > 50:
-        return jsonify({'error': 'Username must be 2-50 characters'}), 400
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already registered'}), 409
     try:
@@ -237,7 +204,6 @@ def logout():
     session.clear(); return jsonify({'success': True})
 
 
-# в”Ђв”Ђ Chats API в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/chats', methods=['GET'])
 @login_required
 def get_chats(user):
@@ -281,7 +247,25 @@ def update_title(user, cid):
     return jsonify({'ok': True})
 
 
-# в”Ђв”Ђ Chat / AI в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+def call_openrouter(messages, model_id, stream=False):
+    """Call OpenRouter with retry on 429."""
+    cfg = MODELS[model_id]
+    headers = {
+        'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://danya-ai.up.railway.app',
+        'X-Title': 'Danya AI',
+    }
+    payload = {'model': cfg['model'], 'messages': messages, 'stream': stream,
+               'temperature': 0.7, 'max_tokens': 4096}
+    for attempt in range(3):
+        resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, stream=stream, timeout=60)
+        if resp.status_code != 429:
+            break
+        time.sleep(2 * (attempt + 1))
+    return resp
+
+
 @app.route('/api/chats/<int:cid>/message', methods=['POST'])
 @login_required
 def send_message(user, cid):
@@ -307,45 +291,32 @@ def send_message(user, cid):
     if not OPENROUTER_API_KEY:
         return jsonify({'error': 'AI service not configured'}), 503
 
-    # Save user message
     user_msg = Message(chat_id=cid, role='user', content=content)
     db.session.add(user_msg)
     chat.model = model
     chat.updated_at = datetime.utcnow()
-    # Auto-title from first message
     if chat.title == 'New chat' and content:
-        chat.title = content[:60] + ('вЂ¦' if len(content) > 60 else '')
+        chat.title = content[:60] + ('...' if len(content) > 60 else '')
     db.session.commit()
 
-    # Build messages for Groq
     history = [m.to_dict() for m in chat.messages.order_by(Message.created_at).all()]
-    groq_msgs = [{'role': 'system', 'content': SYSTEM_PROMPTS.get(model, SYSTEM_PROMPTS['danya-2.5-turbo'])}]
-    groq_msgs += [{'role': m['role'], 'content': m['content']} for m in history if m['role'] in ('user', 'assistant')]
-
-    # qwen-qwq-32b doesn't support temperature/max_tokens the same way
-    is_qwen = False  # not used with OpenRouter
-
-    headers = {
-        'Authorization': f'Bearer {OPENROUTER_API_KEY}',
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://danya-ai.up.railway.app',
-        'X-Title': 'Danya AI',
-    }
-    payload = {'model': cfg['model'], 'messages': groq_msgs, 'stream': stream,
-               'temperature': 0.7, 'max_tokens': 4096}
+    msgs = [{'role': 'system', 'content': SYSTEM_PROMPTS.get(model, SYSTEM_PROMPTS['danya-2.5-turbo'])}]
+    msgs += [{'role': m['role'], 'content': m['content']} for m in history if m['role'] in ('user', 'assistant')]
 
     try:
         if stream:
             def generate():
                 full = ''
                 try:
-                    resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, stream=True, timeout=60)
+                    resp = call_openrouter(msgs, model, stream=True)
                     if not resp.ok:
-                        if resp.status_code == 400:
-                            yield f"data: {json.dumps({'delta': 'РР·РІРёРЅРё, РЅРµ РјРѕРіСѓ РѕС‚РІРµС‚РёС‚СЊ РЅР° СЌС‚Рѕ СЃРѕРѕР±С‰РµРЅРёРµ.'})}\n\n"
+                        if resp.status_code == 429:
+                            yield f"data: {json.dumps({'error': 'rate_limit', 'message': 'Too many requests. Wait a moment.'})}\n\n"
+                        elif resp.status_code == 400:
+                            yield f"data: {json.dumps({'delta': 'Sorry, I cannot respond to this message.'})}\n\n"
                             yield f"data: {json.dumps({'done': True, 'credits': user.to_dict()['total_credits']})}\n\n"
-                            return
-                        yield f"data: {json.dumps({'error': f'AI error {resp.status_code}'})}\n\n"
+                        else:
+                            yield f"data: {json.dumps({'error': f'AI error {resp.status_code}'})}\n\n"
                         return
                     for line in resp.iter_lines():
                         if not line: continue
@@ -372,10 +343,12 @@ def send_message(user, cid):
             return Response(stream_with_context(generate()), content_type='text/event-stream',
                 headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
         else:
-            resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=60)
+            resp = call_openrouter(msgs, model, stream=False)
             if not resp.ok:
+                if resp.status_code == 429:
+                    return jsonify({'error': 'rate_limit', 'message': 'Too many requests. Wait a moment.'}), 429
                 if resp.status_code == 400:
-                    return jsonify({'reply': 'РР·РІРёРЅРё, РЅРµ РјРѕРіСѓ РѕС‚РІРµС‚РёС‚СЊ РЅР° СЌС‚Рѕ СЃРѕРѕР±С‰РµРЅРёРµ.', 'credits': user.to_dict()['total_credits']})
+                    return jsonify({'reply': 'Sorry, I cannot respond to this message.', 'credits': user.to_dict()['total_credits']})
                 return jsonify({'error': f'AI error {resp.status_code}'}), resp.status_code
             reply = resp.json()['choices'][0]['message']['content']
             ai_msg = Message(chat_id=cid, role='assistant', content=reply)
@@ -392,7 +365,6 @@ def send_message(user, cid):
         return jsonify({'error': str(e)}), 500
 
 
-# в”Ђв”Ђ User в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/user/update', methods=['POST'])
 @login_required
 def update_user(user):
@@ -413,10 +385,9 @@ def delete_user(user):
     return jsonify({'success': True})
 
 
-# в”Ђв”Ђ Health в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/health')
 def health():
-    return jsonify({'status': 'ok', 'groq': bool(OPENROUTER_API_KEY), 'models': list(MODELS.keys())})
+    return jsonify({'status': 'ok', 'openrouter': bool(OPENROUTER_API_KEY), 'models': list(MODELS.keys())})
 
 
 if __name__ == '__main__':
