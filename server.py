@@ -33,16 +33,18 @@ ADMIN_EMAIL        = os.environ.get('ADMIN_EMAIL', 'admin@danya.ai')
 ADMIN_PASS         = os.environ.get('ADMIN_PASSWORD', 'admin2026')
 
 MODELS = {
-    'danya-1.0':        {'model': 'meta-llama/llama-3.1-8b-instruct:free', 'cost': 1,   'tier': 'free'},
-    'danya-1.7-mj':     {'model': 'mistralai/mistral-7b-instruct:free',    'cost': 1,   'tier': 'free'},
-    'danya-2.5-turbo':  {'model': 'meta-llama/llama-3.3-70b-instruct:free','cost': 1,   'tier': 'free'},
-    'danya-coala-3.7':  {'model': 'google/gemma-2-9b-it:free',             'cost': 1,   'tier': 'free'},
-    'danya-g-4.4':      {'model': 'meta-llama/llama-3.3-70b-instruct',     'cost': 5,   'tier': 'free'},
-    'danya-coala-4.8':  {'model': 'google/gemma-3-27b-it',                 'cost': 10,  'tier': 'free'},
-    'danya-coala-5.0':  {'model': 'anthropic/claude-3.5-haiku',            'cost': 50,  'tier': 'pro'},
-    'danya-ai-5.5':     {'model': 'anthropic/claude-3.5-sonnet',           'cost': 80,  'tier': 'pro'},
-    'danya-5.5-pro':    {'model': 'anthropic/claude-3-opus',               'cost': 100, 'tier': 'pro'},
-    'danya-6-turbo-pro':{'model': 'openai/gpt-4o',                         'cost': 150, 'tier': 'pro'},
+    # Free tier — все используют deepseek-chat (бесплатный, стабильный)
+    'danya-1.0':        {'model': 'deepseek/deepseek-chat:free',  'cost': 1,   'tier': 'free'},
+    'danya-1.7-mj':     {'model': 'deepseek/deepseek-chat:free',  'cost': 1,   'tier': 'free'},
+    'danya-2.5-turbo':  {'model': 'deepseek/deepseek-chat:free',  'cost': 1,   'tier': 'free'},
+    'danya-coala-3.7':  {'model': 'deepseek/deepseek-chat:free',  'cost': 1,   'tier': 'free'},
+    'danya-g-4.4':      {'model': 'deepseek/deepseek-chat:free',  'cost': 5,   'tier': 'free'},
+    'danya-coala-4.8':  {'model': 'deepseek/deepseek-chat:free',  'cost': 10,  'tier': 'free'},
+    # Pro tier — deepseek-chat платный (лучше качество)
+    'danya-coala-5.0':  {'model': 'deepseek/deepseek-chat',       'cost': 50,  'tier': 'pro'},
+    'danya-ai-5.5':     {'model': 'deepseek/deepseek-chat',       'cost': 80,  'tier': 'pro'},
+    'danya-5.5-pro':    {'model': 'deepseek/deepseek-r1',         'cost': 100, 'tier': 'pro'},
+    'danya-6-turbo-pro':{'model': 'deepseek/deepseek-r1',         'cost': 150, 'tier': 'pro'},
 }
 
 SYSTEM_PROMPTS = {
