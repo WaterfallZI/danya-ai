@@ -1,4 +1,4 @@
-"""
+﻿"""
 Danya AI - Chat Server with OpenRouter backend
 """
 from flask import Flask, request, jsonify, session, send_from_directory, Response, stream_with_context
@@ -247,19 +247,34 @@ def update_title(user, cid):
     return jsonify({'ok': True})
 
 
-def call_openrouter(messages, model_id, stream=False):
-    """Call OpenRouter with retry on 429."""
+def call_openrouter(messages, model_id, stream=False, use_polza=False):
+    """Call OpenRouter or Polza AI with retry on 429."""
     cfg = MODELS[model_id]
-    headers = {
-        'Authorization': f'Bearer {OPENROUTER_API_KEY}',
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://danya-ai.up.railway.app',
-        'X-Title': 'Danya AI',
-    }
-    payload = {'model': cfg['model'], 'messages': messages, 'stream': stream,
+
+    if use_polza and POLZA_API_KEY:
+        api_key = POLZA_API_KEY
+        api_url = POLZA_URL
+        # Polza uses same model IDs as OpenRouter
+        model_name = cfg['model']
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        }
+    else:
+        api_key = OPENROUTER_API_KEY
+        api_url = OPENROUTER_URL
+        model_name = cfg['model']
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://danya-ai.up.railway.app',
+            'X-Title': 'Danya AI',
+        }
+
+    payload = {'model': model_name, 'messages': messages, 'stream': stream,
                'temperature': 0.7, 'max_tokens': 4096}
     for attempt in range(3):
-        resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, stream=stream, timeout=60)
+        resp = requests.post(api_url, headers=headers, json=payload, stream=stream, timeout=60)
         if resp.status_code != 429:
             break
         time.sleep(2 * (attempt + 1))
@@ -276,6 +291,7 @@ def send_message(user, cid):
     content = d.get('content', '').strip()
     model   = d.get('model', chat.model)
     stream  = d.get('stream', False)
+    use_polza = d.get('beta', False) and bool(POLZA_API_KEY)
 
     if not content: return jsonify({'error': 'Empty message'}), 400
     if model not in MODELS: model = 'danya-2.5-turbo'
@@ -308,7 +324,7 @@ def send_message(user, cid):
             def generate():
                 full = ''
                 try:
-                    resp = call_openrouter(msgs, model, stream=True)
+                    resp = call_openrouter(msgs, model, stream=True, use_polza=use_polza)
                     if not resp.ok:
                         if resp.status_code == 429:
                             yield f"data: {json.dumps({'error': 'rate_limit', 'message': 'Too many requests. Wait a moment.'})}\n\n"
@@ -343,7 +359,7 @@ def send_message(user, cid):
             return Response(stream_with_context(generate()), content_type='text/event-stream',
                 headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
         else:
-            resp = call_openrouter(msgs, model, stream=False)
+            resp = call_openrouter(msgs, model, stream=False, use_polza=use_polza)
             if not resp.ok:
                 if resp.status_code == 429:
                     return jsonify({'error': 'rate_limit', 'message': 'Too many requests. Wait a moment.'}), 429

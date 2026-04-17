@@ -242,6 +242,25 @@ body {
 }
 .topbar-btn:hover { color: var(--text); background: var(--hover); }
 
+/* BETA button */
+.beta-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid rgba(99,102,241,0.3);
+  color: rgba(99,102,241,0.7);
+  transition: all 0.2s;
+}
+.beta-btn:hover { border-color: rgba(99,102,241,0.6); color: #818cf8; background: rgba(99,102,241,0.08); }
+.beta-btn.active {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.5);
+  color: #818cf8;
+  box-shadow: 0 0 8px rgba(99,102,241,0.3);
+  animation: betaPulse 2s ease infinite;
+}
+@keyframes betaPulse { 0%,100%{box-shadow:0 0 8px rgba(99,102,241,0.3)} 50%{box-shadow:0 0 16px rgba(99,102,241,0.5)} }
+
 #chat-title {
   flex: 1;
   font-size: 14px;
@@ -892,6 +911,14 @@ body {
       </div>
     </div>
 
+    <!-- BETA toggle -->
+    <button class="topbar-btn beta-btn" id="beta-btn" onclick="toggleBeta()" title="Polza AI Beta">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      <span>BETA</span>
+    </button>
+
     <button class="topbar-btn" onclick="clearChat()" title="Clear chat">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="3 6 5 6 21 6"/>
@@ -1038,6 +1065,18 @@ let chats = [];
 let selectedModel = 'danya-2.5-turbo';
 let isStreaming = false;
 let sidebarCollapsed = false;
+let betaMode = false;
+
+function toggleBeta() {
+  betaMode = !betaMode;
+  const btn = document.getElementById('beta-btn');
+  btn.classList.toggle('active', betaMode);
+  if (betaMode) {
+    showToast('Polza AI Beta enabled', 'success');
+  } else {
+    showToast('Switched back to OpenRouter', '');
+  }
+}
 
 // ── Init ───────────────────────────────────────────────────────────────
 async function init() {
@@ -1306,7 +1345,7 @@ async function sendMessage() {
     const r = await fetch(`/api/chats/${currentChatId}/message`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, model: selectedModel, stream: true })
+      body: JSON.stringify({ content, model: selectedModel, stream: true, beta: betaMode })
     });
 
     if (!r.ok) {
