@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10a37f"/>
+      <stop offset="100%" style="stop-color:#0d6b54"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Shine overlay -->
+  <rect width="512" height="512" rx="112" fill="url(#shine)"/>
+
+  <!-- Chat bubble shape -->
+  <path d="M96 140 Q96 100 136 100 L376 100 Q416 100 416 140 L416 300 Q416 340 376 340 L200 340 L140 400 L140 340 L136 340 Q96 340 96 300 Z"
+    fill="white" opacity="0.95"/>
+
+  <!-- AI circuit dots inside bubble -->
+  <!-- Top row dots -->
+  <circle cx="180" cy="180" r="14" fill="#10a37f"/>
+  <circle cx="256" cy="180" r="14" fill="#10a37f"/>
+  <circle cx="332" cy="180" r="14" fill="#10a37f"/>
+
+  <!-- Middle row dots -->
+  <circle cx="180" cy="230" r="14" fill="#10a37f"/>
+  <circle cx="256" cy="230" r="14" fill="#0d8a6b"/>
+  <circle cx="332" cy="230" r="14" fill="#10a37f"/>
+
+  <!-- Bottom row dots -->
+  <circle cx="180" cy="280" r="14" fill="#10a37f"/>
+  <circle cx="256" cy="280" r="14" fill="#10a37f"/>
+  <circle cx="332" cy="280" r="14" fill="#10a37f"/>
+
+  <!-- Connecting lines horizontal -->
+  <line x1="194" y1="180" x2="242" y2="180" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+  <line x1="270" y1="180" x2="318" y2="180" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+  <line x1="194" y1="230" x2="242" y2="230" stroke="#0d8a6b" stroke-width="5" stroke-linecap="round"/>
+  <line x1="270" y1="230" x2="318" y2="230" stroke="#0d8a6b" stroke-width="5" stroke-linecap="round"/>
+  <line x1="194" y1="280" x2="242" y2="280" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+  <line x1="270" y1="280" x2="318" y2="280" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Connecting lines vertical -->
+  <line x1="180" y1="194" x2="180" y2="216" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+  <line x1="256" y1="194" x2="256" y2="216" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+  <line x1="332" y1="194" x2="332" y2="216" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+  <line x1="180" y1="244" x2="180" y2="266" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+  <line x1="256" y1="244" x2="256" y2="266" stroke="#0d8a6b" stroke-width="5" stroke-linecap="round"/>
+  <line x1="332" y1="244" x2="332" y2="266" stroke="#10a37f" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Center highlight -->
+  <circle cx="256" cy="230" r="8" fill="white" opacity="0.9"/>
+</svg>

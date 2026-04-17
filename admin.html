@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — AI Chat Company</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0d0d0d; color:#e5e5e5; min-height:100vh; }
+
+/* Layout */
+.layout { display:flex; min-height:100vh; }
+.sidebar { width:220px; background:#111; border-right:1px solid rgba(255,255,255,0.06); padding:20px 0; flex-shrink:0; }
+.main { flex:1; padding:32px; overflow-y:auto; }
+
+/* Sidebar */
+.sb-logo { display:flex; align-items:center; gap:10px; padding:0 20px 24px; border-bottom:1px solid rgba(255,255,255,0.06); margin-bottom:16px; }
+.sb-logo-mark { width:32px; height:32px; background:#10a37f; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.sb-logo-text { font-size:14px; font-weight:800; color:#fff; }
+.sb-badge { font-size:9px; background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:4px; padding:1px 5px; font-weight:700; letter-spacing:0.5px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:rgba(255,255,255,0.5); font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; border-left:2px solid transparent; }
+.nav-item:hover { color:#fff; background:rgba(255,255,255,0.04); }
+.nav-item.active { color:#10a37f; background:rgba(16,163,127,0.08); border-left-color:#10a37f; }
+.nav-item-icon { font-size:16px; width:20px; text-align:center; }
+
+/* Stats */
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+.stat-card { background:#1a1a1a; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px; }
+.stat-label { font-size:12px; color:rgba(255,255,255,0.4); font-weight:500; margin-bottom:8px; }
+.stat-value { font-size:28px; font-weight:900; color:#fff; letter-spacing:-1px; }
+.stat-card.green .stat-value { color:#10a37f; }
+.stat-card.blue .stat-value { color:#3b82f6; }
+.stat-card.amber .stat-value { color:#f59e0b; }
+.stat-card.red .stat-value { color:#ef4444; }
+
+/* Section */
+.section-title { font-size:18px; font-weight:800; color:#fff; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+.section-title span { font-size:20px; }
+
+/* Table */
+.table-wrap { background:#1a1a1a; border:1px solid rgba(255,255,255,0.06); border-radius:12px; overflow:hidden; }
+.table-header { display:grid; grid-template-columns:40px 1fr 120px 100px 80px 120px 120px; gap:12px; padding:12px 16px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.06); font-size:11px; font-weight:700; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.5px; }
+.table-row { display:grid; grid-template-columns:40px 1fr 120px 100px 80px 120px 120px; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.04); align-items:center; transition:background 0.15s; }
+.table-row:last-child { border-bottom:none; }
+.table-row:hover { background:rgba(255,255,255,0.02); }
+.user-id { font-size:12px; color:rgba(255,255,255,0.3); font-family:monospace; }
+.user-info { display:flex; flex-direction:column; gap:2px; }
+.user-name { font-size:13px; font-weight:600; color:#fff; }
+.user-email { font-size:11px; color:rgba(255,255,255,0.4); }
+.plan-badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700; }
+.plan-free { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.4); }
+.plan-pro { background:rgba(16,163,127,0.15); color:#10a37f; }
+.plan-max { background:rgba(59,130,246,0.15); color:#3b82f6; }
+.plan-ultra { background:rgba(124,58,237,0.15); color:#a78bfa; }
+.credits-val { font-size:13px; font-weight:600; color:#f59e0b; font-family:monospace; }
+.status-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; }
+.status-active { color:#10a37f; }
+.status-banned { color:#ef4444; }
+.status-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.actions { display:flex; gap:6px; }
+.btn-sm { padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; border:none; font-family:inherit; transition:all 0.15s; }
+.btn-plan { background:rgba(16,163,127,0.15); color:#10a37f; }
+.btn-plan:hover { background:rgba(16,163,127,0.25); }
+.btn-ban { background:rgba(239,68,68,0.15); color:#ef4444; }
+.btn-ban:hover { background:rgba(239,68,68,0.25); }
+.btn-unban { background:rgba(16,163,127,0.15); color:#10a37f; }
+.btn-unban:hover { background:rgba(16,163,127,0.25); }
+.btn-del { background:rgba(239,68,68,0.1); color:rgba(239,68,68,0.7); }
+.btn-del:hover { background:rgba(239,68,68,0.2); color:#ef4444; }
+
+/* Search */
+.search-bar { display:flex; gap:12px; margin-bottom:16px; }
+.search-input { flex:1; background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 14px; color:#fff; font-size:13px; font-family:inherit; outline:none; transition:border-color 0.2s; }
+.search-input:focus { border-color:#10a37f; }
+.search-input::placeholder { color:rgba(255,255,255,0.3); }
+.btn-refresh { padding:9px 16px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:rgba(255,255,255,0.6); font-size:13px; cursor:pointer; font-family:inherit; transition:all 0.15s; }
+.btn-refresh:hover { background:rgba(255,255,255,0.1); color:#fff; }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:999; padding:20px; }
+.modal-overlay.open { display:flex; }
+.modal { background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:28px; max-width:400px; width:100%; }
+.modal h3 { font-size:18px; font-weight:800; color:#fff; margin-bottom:16px; }
+.modal-field { margin-bottom:14px; }
+.modal-field label { display:block; font-size:12px; font-weight:600; color:rgba(255,255,255,0.5); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; }
+.modal-input { width:100%; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 12px; color:#fff; font-size:13px; font-family:inherit; outline:none; }
+.modal-input:focus { border-color:#10a37f; }
+.modal-select { width:100%; background:#111; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 12px; color:#fff; font-size:13px; font-family:inherit; outline:none; cursor:pointer; }
+.modal-actions { display:flex; gap:10px; margin-top:20px; }
+.btn-primary { flex:1; padding:10px; background:#10a37f; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.btn-primary:hover { background:#0d8a6b; }
+.btn-cancel { flex:1; padding:10px; background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.15s; }
+.btn-cancel:hover { background:rgba(255,255,255,0.1); color:#fff; }
+
+/* Toast */
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { padding:12px 18px; border-radius:10px; font-size:13px; font-weight:600; animation:toastIn 0.3s ease; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+@keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.toast.success { background:#10a37f; color:#fff; }
+.toast.error { background:#ef4444; color:#fff; }
+.toast.info { background:#1a1a2e; color:#fff; border:1px solid rgba(255,255,255,0.1); }
+
+/* Loading */
+.loading { text-align:center; padding:40px; color:rgba(255,255,255,0.3); font-size:14px; }
+.empty { text-align:center; padding:40px; color:rgba(255,255,255,0.3); font-size:14px; }
+
+/* Admin badge */
+.admin-badge { background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.2); border-radius:4px; font-size:9px; font-weight:700; padding:1px 5px; letter-spacing:0.5px; }
+.op-badge { background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.2); border-radius:4px; font-size:9px; font-weight:700; padding:1px 5px; letter-spacing:0.5px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">💬</div>
+      <div>
+        <div class="sb-logo-text">AI Chat Co.</div>
+        <div class="sb-badge">ADMIN</div>
+      </div>
+    </div>
+    <div class="nav-item active" onclick="showSection('users')">
+      <span class="nav-item-icon">👥</span> Users
+    </div>
+    <div class="nav-item" onclick="showSection('stats')">
+      <span class="nav-item-icon">📊</span> Stats
+    </div>
+    <div class="nav-item" onclick="window.location='/chat.html'">
+      <span class="nav-item-icon">💬</span> Chat
+    </div>
+    <div class="nav-item" onclick="window.location='/operator.html'">
+      <span class="nav-item-icon">🎧</span> Operator
+    </div>
+    <div class="nav-item" onclick="logout()" style="margin-top:auto; color:rgba(239,68,68,0.7)">
+      <span class="nav-item-icon">🚪</span> Logout
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Stats Section -->
+    <div id="section-stats" style="display:none">
+      <div class="section-title"><span>📊</span> Overview</div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card green"><div class="stat-label">Total Users</div><div class="stat-value" id="stat-total">—</div></div>
+        <div class="stat-card blue"><div class="stat-label">Pro+ Users</div><div class="stat-value" id="stat-pro">—</div></div>
+        <div class="stat-card amber"><div class="stat-label">Free Users</div><div class="stat-value" id="stat-free">—</div></div>
+        <div class="stat-card red"><div class="stat-label">Banned</div><div class="stat-value" id="stat-banned">—</div></div>
+      </div>
+    </div>
+
+    <!-- Users Section -->
+    <div id="section-users">
+      <div class="section-title"><span>👥</span> Users</div>
+      <div class="search-bar">
+        <input class="search-input" id="search-input" placeholder="Search by name or email..." oninput="filterUsers()">
+        <button class="btn-refresh" onclick="loadUsers()">↺ Refresh</button>
+        <button class="btn-refresh" style="background:rgba(16,163,127,0.15);color:#10a37f;border-color:rgba(16,163,127,0.3)" onclick="openCreateModal()">+ Create User</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <div>ID</div><div>User</div><div>Plan</div><div>Credits</div><div>Status</div><div>Roles</div><div>Actions</div>
+        </div>
+        <div id="users-list"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Plan Modal -->
+<div class="modal-overlay" id="plan-modal">
+  <div class="modal">
+    <h3>Change Plan</h3>
+    <div class="modal-field">
+      <label>Plan</label>
+      <select class="modal-select" id="plan-select">
+        <option value="free">Free</option>
+        <option value="pro">Pro</option>
+        <option value="max">Max</option>
+        <option value="ultra">Ultra (Unlimited)</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Credits</label>
+      <input class="modal-input" id="credits-input" type="number" placeholder="Credits amount">
+    </div>
+    <div class="modal-field">
+      <label>Bonus Credits</label>
+      <input class="modal-input" id="bonus-input" type="number" placeholder="Bonus credits">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePlanModal()">Cancel</button>
+      <button class="btn-primary" onclick="savePlan()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-overlay" id="create-modal">
+  <div class="modal">
+    <h3>Create User</h3>
+    <div class="modal-field">
+      <label>Username</label>
+      <input class="modal-input" id="new-username" placeholder="Username">
+    </div>
+    <div class="modal-field">
+      <label>Email</label>
+      <input class="modal-input" id="new-email" type="email" placeholder="email@example.com">
+    </div>
+    <div class="modal-field">
+      <label>Password</label>
+      <input class="modal-input" id="new-password" type="password" placeholder="Min 6 characters">
+    </div>
+    <div class="modal-field">
+      <label>Plan</label>
+      <select class="modal-select" id="new-plan">
+        <option value="free">Free</option>
+        <option value="pro">Pro</option>
+        <option value="max">Max</option>
+        <option value="ultra">Ultra</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn-primary" onclick="createUser()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+'use strict';
+
+let allUsers = [];
+let editingUid = null;
+
+// -- Init --
+(async () => {
+  const r = await fetch('/api/auth/me', { credentials: 'include' });
+  if (!r.ok) { location.href = '/login.html'; return; }
+  const me = await r.json();
+  if (!me.is_admin) { location.href = '/chat.html'; return; }
+  loadUsers();
+  loadStats();
+})();
+
+// -- Navigation --
+function showSection(name) {
+  document.querySelectorAll('[id^="section-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('section-' + name).style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  if (name === 'stats') loadStats();
+}
+
+// -- Stats --
+async function loadStats() {
+  const r = await fetch('/api/admin/stats', { credentials: 'include' });
+  if (!r.ok) return;
+  const d = await r.json();
+  document.getElementById('stat-total').textContent = d.total_users;
+  document.getElementById('stat-pro').textContent = d.pro_plus;
+  document.getElementById('stat-free').textContent = d.free;
+  document.getElementById('stat-banned').textContent = d.banned;
+}
+
+// -- Users --
+async function loadUsers() {
+  document.getElementById('users-list').innerHTML = '<div class="loading">Loading...</div>';
+  const r = await fetch('/api/admin/users', { credentials: 'include' });
+  if (!r.ok) { toast('Failed to load users', 'error'); return; }
+  allUsers = await r.json();
+  renderUsers(allUsers);
+}
+
+function filterUsers() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const filtered = allUsers.filter(u =>
+    u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+  );
+  renderUsers(filtered);
+}
+
+function renderUsers(users) {
+  const list = document.getElementById('users-list');
+  if (!users.length) { list.innerHTML = '<div class="empty">No users found</div>'; return; }
+
+  list.innerHTML = users.map(u => `
+    <div class="table-row">
+      <div class="user-id">#${u.id}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(u.username)}</div>
+        <div class="user-email">${esc(u.email)}</div>
+      </div>
+      <div><span class="plan-badge plan-${u.plan}">${u.plan}</span></div>
+      <div class="credits-val">${u.total_credits === -1 ? '∞' : u.total_credits}</div>
+      <div>
+        <span class="status-badge ${u.is_banned ? 'status-banned' : 'status-active'}">
+          <span class="status-dot"></span>
+          ${u.is_banned ? 'Banned' : 'Active'}
+        </span>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${u.is_admin ? '<span class="admin-badge">ADMIN</span>' : ''}
+        ${u.is_operator ? '<span class="op-badge">OP</span>' : ''}
+      </div>
+      <div class="actions">
+        <button class="btn-sm btn-plan" onclick="openPlanModal(${u.id}, '${u.plan}', ${u.credits}, ${u.bonus_credits})">Plan</button>
+        ${u.is_banned
+          ? `<button class="btn-sm btn-unban" onclick="unbanUser(${u.id})">Unban</button>`
+          : `<button class="btn-sm btn-ban" onclick="banUser(${u.id})">Ban</button>`
+        }
+        ${!u.is_admin ? `<button class="btn-sm btn-del" onclick="deleteUser(${u.id})">Del</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// -- Plan Modal --
+function openPlanModal(uid, plan, credits, bonus) {
+  editingUid = uid;
+  document.getElementById('plan-select').value = plan;
+  document.getElementById('credits-input').value = credits;
+  document.getElementById('bonus-input').value = bonus;
+  document.getElementById('plan-modal').classList.add('open');
+}
+function closePlanModal() {
+  document.getElementById('plan-modal').classList.remove('open');
+  editingUid = null;
+}
+async function savePlan() {
+  const plan = document.getElementById('plan-select').value;
+  const credits = parseInt(document.getElementById('credits-input').value) || 0;
+  const bonus = parseInt(document.getElementById('bonus-input').value) || 0;
+
+  const [r1, r2] = await Promise.all([
+    fetch(`/api/admin/users/${editingUid}/set-plan`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan })
+    }),
+    fetch(`/api/admin/users/${editingUid}/set-credits`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credits, bonus_credits: bonus })
+    })
+  ]);
+
+  if (r1.ok && r2.ok) {
+    toast('Plan updated', 'success');
+    closePlanModal();
+    loadUsers();
+  } else {
+    toast('Failed to update', 'error');
+  }
+}
+
+// -- Ban/Unban/Delete --
+async function banUser(uid) {
+  if (!confirm('Ban this user?')) return;
+  const r = await fetch(`/api/admin/users/${uid}/ban`, { method: 'POST', credentials: 'include' });
+  if (r.ok) { toast('User banned', 'success'); loadUsers(); }
+  else toast('Failed', 'error');
+}
+async function unbanUser(uid) {
+  const r = await fetch(`/api/admin/users/${uid}/unban`, { method: 'POST', credentials: 'include' });
+  if (r.ok) { toast('User unbanned', 'success'); loadUsers(); }
+  else toast('Failed', 'error');
+}
+async function deleteUser(uid) {
+  if (!confirm('Delete this user permanently?')) return;
+  const r = await fetch(`/api/admin/users/${uid}/delete`, { method: 'DELETE', credentials: 'include' });
+  if (r.ok) { toast('User deleted', 'success'); loadUsers(); }
+  else toast('Failed', 'error');
+}
+
+// -- Create User Modal --
+function openCreateModal() { document.getElementById('create-modal').classList.add('open'); }
+function closeCreateModal() { document.getElementById('create-modal').classList.remove('open'); }
+async function createUser() {
+  const username = document.getElementById('new-username').value.trim();
+  const email    = document.getElementById('new-email').value.trim();
+  const password = document.getElementById('new-password').value;
+  const plan     = document.getElementById('new-plan').value;
+
+  if (!username || !email || !password) { toast('Fill all fields', 'error'); return; }
+
+  const r = await fetch('/api/auth/register', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, email, password })
+  });
+  const d = await r.json();
+  if (!r.ok) { toast(d.error || 'Failed', 'error'); return; }
+
+  // Set plan if not free
+  if (plan !== 'free') {
+    await fetch(`/api/admin/users/${d.user.id}/set-plan`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan })
+    });
+  }
+
+  toast('User created!', 'success');
+  closeCreateModal();
+  loadUsers();
+}
+
+// -- Logout --
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  location.href = '/login.html';
+}
+
+// -- Utils --
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+</script>
+</body>
+</html>

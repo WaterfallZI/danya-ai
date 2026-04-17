@@ -1,0 +1,893 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/icon.svg"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile — AI Chat Company</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* ── Profile-specific overrides ── */
+:root {
+  --c: #10a37f;
+  --c2: #1a7f64;
+  --c-rgb: 16, 163, 127;
+  --bg: #ffffff;
+  --text: #0d0d0d;
+  --text2: #353740;
+  --text3: #6e6e80;
+  --border: #e5e5e5;
+  --surface: rgba(255,255,255,0.85);
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── Grid bg ── */
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridShift 20s linear infinite;
+}
+@keyframes gridShift {
+  0%   { background-position: 0 0, 0 0; }
+  100% { background-position: 40px 40px, 40px 40px; }
+}
+.noise-overlay {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ── Header ── */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: 64px; padding: 0 32px;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.header.scrolled {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.07);
+}
+.header-inner {
+  max-width: 1100px; margin: 0 auto; height: 100%;
+  display: flex; align-items: center; gap: 28px;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; flex-shrink: 0;
+}
+.logo-mark {
+  width: 34px; height: 34px;
+  background: var(--c); border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(var(--c-rgb), 0.35);
+}
+.logo-mark svg { width: 20px; height: 20px; }
+.logo-text { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+.nav { display: flex; gap: 2px; flex: 1; justify-content: center; }
+.nav-link {
+  padding: 7px 15px; border-radius: 8px;
+  color: var(--text3); font-size: 14px; font-weight: 500;
+  text-decoration: none; transition: all 0.15s;
+}
+.nav-link:hover, .nav-link.active { color: var(--text); background: rgba(0,0,0,0.04); }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.btn-header-login {
+  padding: 8px 18px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text2); font-size: 14px; font-weight: 600;
+  text-decoration: none; transition: all 0.15s; cursor: pointer;
+}
+.btn-header-login:hover { background: rgba(0,0,0,0.04); }
+.btn-header-cta {
+  padding: 8px 18px; border-radius: 8px;
+  background: var(--c); color: #fff;
+  font-size: 14px; font-weight: 700;
+  text-decoration: none; transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(var(--c-rgb), 0.3);
+}
+.btn-header-cta:hover {
+  background: var(--c2);
+  box-shadow: 0 4px 16px rgba(var(--c-rgb), 0.45);
+  transform: translateY(-1px);
+}
+.user-menu {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 14px; border-radius: 10px;
+  background: rgba(0,0,0,0.03); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.15s;
+  text-decoration: none; color: var(--text2);
+  font-size: 14px; font-weight: 600;
+}
+.user-menu:hover { background: rgba(0,0,0,0.06); }
+.user-menu-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--c); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800;
+}
+
+/* ── Page wrapper ── */
+.page {
+  position: relative; z-index: 2;
+  padding-top: 80px; padding-bottom: 80px;
+  min-height: 100vh;
+}
+.page-inner {
+  max-width: 860px; margin: 0 auto;
+  padding: 0 24px;
+  display: flex; flex-direction: column; gap: 28px;
+}
+
+/* ── Profile Hero ── */
+.profile-hero {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 20px;
+  padding: 36px 32px;
+  display: flex; align-items: center; gap: 28px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  transition: box-shadow 0.3s;
+}
+.profile-hero:hover { box-shadow: 0 8px 40px rgba(0,0,0,0.1); }
+.hero-avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(var(--c-rgb),0.15), rgba(var(--c-rgb),0.05));
+  border: 3px solid rgba(var(--c-rgb),0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(var(--c-rgb),0.15);
+}
+.hero-info { flex: 1; }
+.hero-name {
+  font-size: 24px; font-weight: 900;
+  color: var(--text); letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+.hero-email { font-size: 14px; color: var(--text3); margin-bottom: 12px; }
+.hero-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.plan-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 14px; border-radius: 99px;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.3px;
+}
+.plan-free { background: rgba(100,100,100,0.08); color: #888; border: 1px solid #e5e5e5; }
+.plan-pro { background: rgba(var(--c-rgb),0.1); color: var(--c); border: 1px solid rgba(var(--c-rgb),0.25); }
+.plan-ultra {
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(var(--c-rgb),0.08));
+  color: #7c3aed; border: 1px solid rgba(124,58,237,0.25);
+}
+.plan-max { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); }
+.member-since { font-size: 12px; color: var(--text3); }
+
+/* ── Section card ── */
+.card {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 20px;
+  padding: 28px 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 8px 40px rgba(0,0,0,0.1); }
+.card-title {
+  font-size: 16px; font-weight: 800;
+  color: var(--text); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title-icon { font-size: 18px; }
+
+/* ── Credits card ── */
+.credits-big {
+  font-size: 52px; font-weight: 900;
+  color: var(--text); letter-spacing: -2px;
+  line-height: 1; margin-bottom: 6px;
+}
+.credits-sub { font-size: 14px; color: var(--text3); margin-bottom: 20px; }
+.credits-bar-wrap {
+  height: 10px; background: #f0f0f0;
+  border-radius: 99px; overflow: hidden;
+  margin-bottom: 10px;
+}
+.credits-bar-inner { height: 100%; display: flex; border-radius: 99px; overflow: hidden; }
+.credits-bar-bonus { background: linear-gradient(90deg, #10a37f, #0d8a6b); transition: width 0.6s ease; }
+.credits-bar-regular { background: linear-gradient(90deg, #3b82f6, #2563eb); transition: width 0.6s ease; }
+.credits-legend {
+  display: flex; gap: 16px; margin-bottom: 20px;
+  font-size: 13px; color: var(--text3);
+}
+.credits-legend span { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.btn-get-credits {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 24px; border-radius: 10px;
+  background: var(--c); color: #fff; border: none;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 12px rgba(var(--c-rgb),0.3);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-get-credits:hover {
+  background: var(--c2);
+  box-shadow: 0 4px 20px rgba(var(--c-rgb),0.45);
+  transform: translateY(-1px);
+}
+
+/* ── Plans grid ── */
+.plans-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.plan-card {
+  border: 2px solid var(--border);
+  border-radius: 16px; padding: 22px 20px;
+  transition: all 0.25s;
+  position: relative; overflow: hidden;
+  cursor: pointer;
+}
+.plan-card:hover {
+  border-color: rgba(var(--c-rgb),0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  transform: translateY(-3px);
+}
+.plan-card.current {
+  border-color: var(--c);
+  background: rgba(var(--c-rgb),0.04);
+  box-shadow: 0 4px 20px rgba(var(--c-rgb),0.12);
+}
+.plan-card.current::before {
+  content: 'Current';
+  position: absolute; top: 12px; right: 12px;
+  background: var(--c); color: #fff;
+  font-size: 10px; font-weight: 800;
+  padding: 2px 8px; border-radius: 99px;
+  letter-spacing: 0.5px;
+}
+.plan-card.ultra-card {
+  background: linear-gradient(135deg, rgba(124,58,237,0.04), rgba(var(--c-rgb),0.03));
+  border-color: rgba(124,58,237,0.2);
+}
+.plan-card.ultra-card:hover { border-color: rgba(124,58,237,0.5); }
+.plan-name {
+  font-size: 15px; font-weight: 800; color: var(--text);
+  margin-bottom: 4px;
+}
+.plan-price {
+  font-size: 28px; font-weight: 900; color: var(--text);
+  letter-spacing: -1px; margin-bottom: 12px;
+}
+.plan-price span { font-size: 14px; font-weight: 500; color: var(--text3); }
+.plan-features { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+.plan-features li {
+  font-size: 13px; color: var(--text2);
+  display: flex; align-items: center; gap: 7px;
+}
+.plan-features li::before {
+  content: '✓'; color: var(--c);
+  font-weight: 900; font-size: 11px;
+  width: 16px; height: 16px;
+  background: rgba(var(--c-rgb),0.1);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.btn-upgrade {
+  width: 100%; padding: 9px;
+  border-radius: 9px; border: 1px solid var(--border);
+  background: transparent; color: var(--text2);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.btn-upgrade:hover { background: rgba(0,0,0,0.04); border-color: #bbb; }
+.btn-upgrade.primary {
+  background: var(--c); color: #fff; border-color: var(--c);
+  box-shadow: 0 2px 10px rgba(var(--c-rgb),0.3);
+}
+.btn-upgrade.primary:hover {
+  background: var(--c2);
+  box-shadow: 0 4px 16px rgba(var(--c-rgb),0.45);
+}
+.btn-upgrade.ultra-btn {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: #fff; border-color: transparent;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.3);
+}
+.btn-upgrade.ultra-btn:hover {
+  box-shadow: 0 4px 20px rgba(124,58,237,0.5);
+  transform: translateY(-1px);
+}
+
+/* ── Settings form ── */
+.settings-section { display: flex; flex-direction: column; gap: 24px; }
+.settings-group { display: flex; flex-direction: column; gap: 8px; }
+.settings-group label {
+  font-size: 13px; font-weight: 700; color: var(--text2);
+}
+.settings-input {
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px; color: var(--text);
+  font-family: inherit; outline: none;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.settings-input:focus {
+  border-color: var(--c);
+  box-shadow: 0 0 0 3px rgba(var(--c-rgb),0.1);
+}
+.settings-input::placeholder { color: #bbb; }
+.settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.btn-save {
+  align-self: flex-start;
+  padding: 11px 28px; border-radius: 10px;
+  background: var(--c); color: #fff; border: none;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 12px rgba(var(--c-rgb),0.3);
+  transition: all 0.2s;
+}
+.btn-save:hover {
+  background: var(--c2);
+  box-shadow: 0 4px 20px rgba(var(--c-rgb),0.45);
+  transform: translateY(-1px);
+}
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.form-divider {
+  height: 1px; background: var(--border);
+  margin: 4px 0;
+}
+
+/* ── Stats ── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.stat-box {
+  background: rgba(var(--c-rgb),0.04);
+  border: 1px solid rgba(var(--c-rgb),0.12);
+  border-radius: 14px; padding: 20px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.stat-box:hover {
+  background: rgba(var(--c-rgb),0.08);
+  transform: translateY(-2px);
+}
+.stat-num {
+  font-size: 32px; font-weight: 900;
+  color: var(--c); letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+.stat-lbl { font-size: 12px; color: var(--text3); font-weight: 500; }
+
+/* ── Danger zone ── */
+.danger-zone {
+  border-color: rgba(239,68,68,0.2);
+  background: rgba(239,68,68,0.02);
+}
+.danger-zone .card-title { color: #ef4444; }
+.danger-desc { font-size: 14px; color: var(--text3); margin-bottom: 16px; line-height: 1.6; }
+.btn-danger {
+  padding: 10px 24px; border-radius: 10px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #ef4444; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-danger:hover {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.4);
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal {
+  background: #fff;
+  border-radius: 20px; padding: 32px;
+  max-width: 420px; width: 100%;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+  transform: scale(0.95);
+  transition: transform 0.2s;
+}
+.modal-overlay.show .modal { transform: scale(1); }
+.modal-icon { font-size: 40px; margin-bottom: 16px; }
+.modal h3 { font-size: 20px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
+.modal p { font-size: 14px; color: var(--text3); line-height: 1.6; margin-bottom: 24px; }
+.modal-actions { display: flex; gap: 10px; }
+.btn-modal-cancel {
+  flex: 1; padding: 11px;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: transparent; color: var(--text2);
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.btn-modal-cancel:hover { background: rgba(0,0,0,0.04); }
+.btn-modal-confirm {
+  flex: 1; padding: 11px;
+  border: none; border-radius: 10px;
+  background: #ef4444; color: #fff;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.btn-modal-confirm:hover { background: #dc2626; }
+
+/* ── Toast ── */
+.toast-container {
+  position: fixed; bottom: 24px; right: 24px;
+  z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  padding: 12px 20px; border-radius: 10px;
+  font-size: 14px; font-weight: 600;
+  animation: toastIn 0.3s ease;
+  max-width: 320px; min-width: 200px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast.success { background: #10a37f; color: #fff; }
+.toast.error { background: #ef4444; color: #fff; }
+.toast.info { background: #fff; color: var(--text); border: 1px solid var(--border); }
+
+/* ── Loading skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .plans-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .settings-row { grid-template-columns: 1fr; }
+  .profile-hero { flex-direction: column; text-align: center; }
+  .hero-badges { justify-content: center; }
+  .page-inner { padding: 0 16px; }
+  .card { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Backgrounds -->
+<div class="grid-bg"></div>
+<div class="noise-overlay"></div>
+
+<!-- Header -->
+<header class="header" id="header">
+  <div class="header-inner">
+    <a href="/index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <span class="logo-text">AI Chat Co.</span>
+    </a>
+    <nav class="nav">
+      <a href="/index.html" class="nav-link">Home</a>
+      <a href="/chat.html" class="nav-link">Chat</a>
+      <a href="/features.html" class="nav-link">Features</a>
+    </nav>
+    <div class="header-actions" id="headerActions">
+      <a href="/login.html" class="btn-header-login">Log in</a>
+      <a href="/login.html" class="btn-header-cta">Get started</a>
+    </div>
+  </div>
+</header>
+
+<!-- Page -->
+<div class="page">
+  <div class="page-inner">
+
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+      <div class="hero-avatar" id="heroAvatar">👤</div>
+      <div class="hero-info">
+        <div class="hero-name" id="heroName">Loading…</div>
+        <div class="hero-email" id="heroEmail">—</div>
+        <div class="hero-badges">
+          <span class="plan-badge plan-free" id="heroPlan">Free</span>
+          <span class="member-since" id="heroMemberSince"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Credits -->
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">💳</span> Credits</div>
+      <div class="credits-big" id="creditsTotal">—</div>
+      <div class="credits-sub" id="creditsSub">total credits available</div>
+      <div class="credits-bar-wrap">
+        <div class="credits-bar-inner">
+          <div class="credits-bar-bonus" id="creditsBarBonus" style="width:0%"></div>
+          <div class="credits-bar-regular" id="creditsBarRegular" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="credits-legend">
+        <span><span class="legend-dot" style="background:#10a37f"></span><span id="legendBonus">0 bonus</span></span>
+        <span><span class="legend-dot" style="background:#3b82f6"></span><span id="legendRegular">0 regular</span></span>
+      </div>
+      <a href="/features.html" class="btn-get-credits">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Get more credits
+      </a>
+    </div>
+
+    <!-- Plans -->
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">🚀</span> Plans</div>
+      <div class="plans-grid">
+        <!-- Free -->
+        <div class="plan-card" id="planFree">
+          <div class="plan-name">Free</div>
+          <div class="plan-price">$0 <span>/ mo</span></div>
+          <ul class="plan-features">
+            <li>50 credits / month</li>
+            <li>300 bonus credits</li>
+            <li>Basic AI models</li>
+            <li>Chat history</li>
+          </ul>
+          <button class="btn-upgrade" onclick="selectPlan('free')">Current plan</button>
+        </div>
+        <!-- Pro -->
+        <div class="plan-card" id="planPro">
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">$9 <span>/ mo</span></div>
+          <ul class="plan-features">
+            <li>1,000 credits / month</li>
+            <li>All AI models</li>
+            <li>Image generation</li>
+            <li>Priority support</li>
+          </ul>
+          <button class="btn-upgrade primary" onclick="selectPlan('pro')">Upgrade to Pro</button>
+        </div>
+        <!-- Ultra -->
+        <div class="plan-card ultra-card" id="planUltra">
+          <div class="plan-name">Ultra</div>
+          <div class="plan-price">$29 <span>/ mo</span></div>
+          <ul class="plan-features">
+            <li>Unlimited credits</li>
+            <li>All models + GPT-4</li>
+            <li>Voice + Image gen</li>
+            <li>Operator access</li>
+          </ul>
+          <button class="btn-upgrade ultra-btn" onclick="selectPlan('ultra')">Go Ultra</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Settings -->
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">⚙️</span> Account Settings</div>
+      <div class="settings-section">
+        <!-- Username -->
+        <div class="settings-group">
+          <label for="inputUsername">Username</label>
+          <input type="text" id="inputUsername" class="settings-input" placeholder="Your username" autocomplete="username">
+        </div>
+
+        <div class="form-divider"></div>
+
+        <!-- Password -->
+        <div class="settings-group">
+          <label>Change Password</label>
+          <div class="settings-row">
+            <input type="password" id="inputCurrentPw" class="settings-input" placeholder="Current password" autocomplete="current-password">
+            <input type="password" id="inputNewPw" class="settings-input" placeholder="New password" autocomplete="new-password">
+          </div>
+          <input type="password" id="inputConfirmPw" class="settings-input" placeholder="Confirm new password" autocomplete="new-password">
+        </div>
+
+        <button class="btn-save" id="btnSave" onclick="saveSettings()">Save changes</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">📊</span> Your Stats</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="statMessages">—</div>
+          <div class="stat-lbl">Messages sent</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statChats">—</div>
+          <div class="stat-lbl">Chats created</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statDays">—</div>
+          <div class="stat-lbl">Days as member</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card danger-zone">
+      <div class="card-title"><span class="card-title-icon">⚠️</span> Danger Zone</div>
+      <p class="danger-desc">Permanently delete your account and all associated data. This action cannot be undone.</p>
+      <button class="btn-danger" onclick="showDeleteModal()">Delete my account</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <h3>Delete account?</h3>
+    <p>This will permanently delete your account, all chat history, and credits. There's no going back.</p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="hideDeleteModal()">Cancel</button>
+      <button class="btn-modal-confirm" onclick="deleteAccount()">Yes, delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let user = null;
+
+// ── Init ───────────────────────────────────────────────────────────────
+async function init() {
+  // Header scroll effect
+  window.addEventListener('scroll', () => {
+    document.getElementById('header').classList.toggle('scrolled', window.scrollY > 10);
+  });
+
+  try {
+    const r = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!r.ok) {
+      window.location.href = '/login.html';
+      return;
+    }
+    user = await r.json();
+    renderProfile(user);
+    updateHeader(user);
+  } catch(e) {
+    window.location.href = '/login.html';
+  }
+}
+
+// ── Render ─────────────────────────────────────────────────────────────
+function renderProfile(u) {
+  // Hero
+  document.getElementById('heroAvatar').textContent = getAvatar(u.username);
+  document.getElementById('heroName').textContent = u.username || 'User';
+  document.getElementById('heroEmail').textContent = u.email || '';
+
+  const planEl = document.getElementById('heroPlan');
+  planEl.textContent = capitalize(u.plan || 'free');
+  planEl.className = `plan-badge plan-${u.plan || 'free'}`;
+
+  if (u.created_at) {
+    const d = new Date(u.created_at);
+    document.getElementById('heroMemberSince').textContent = `Member since ${d.toLocaleDateString([], {year:'numeric',month:'long'})}`;
+  }
+
+  // Credits
+  const bonus = u.bonus_credits || 0;
+  const regular = u.credits || 0;
+  const total = u.plan === 'ultra' ? '∞' : (bonus + regular).toLocaleString();
+  document.getElementById('creditsTotal').textContent = total;
+  document.getElementById('creditsSub').textContent = u.plan === 'ultra' ? 'unlimited credits (Ultra plan)' : 'total credits available';
+  document.getElementById('legendBonus').textContent = `${bonus.toLocaleString()} bonus`;
+  document.getElementById('legendRegular').textContent = `${regular.toLocaleString()} regular`;
+
+  if (u.plan !== 'ultra') {
+    const totalNum = bonus + regular;
+    const bonusPct = totalNum > 0 ? (bonus / totalNum) * 100 : 0;
+    const regularPct = totalNum > 0 ? (regular / totalNum) * 100 : 0;
+    document.getElementById('creditsBarBonus').style.width = bonusPct + '%';
+    document.getElementById('creditsBarRegular').style.width = regularPct + '%';
+  } else {
+    document.getElementById('creditsBarBonus').style.width = '100%';
+  }
+
+  // Plans — highlight current
+  ['free','pro','ultra','max'].forEach(p => {
+    const el = document.getElementById('planFree') || null;
+  });
+  const planMap = { free: 'planFree', pro: 'planPro', ultra: 'planUltra', max: 'planUltra' };
+  const currentPlanId = planMap[u.plan] || 'planFree';
+  ['planFree','planPro','planUltra'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('current', id === currentPlanId);
+  });
+  // Update button text for current plan
+  const currentPlanEl = document.getElementById(currentPlanId);
+  if (currentPlanEl) {
+    const btn = currentPlanEl.querySelector('.btn-upgrade');
+    if (btn) btn.textContent = 'Current plan';
+  }
+
+  // Settings form
+  document.getElementById('inputUsername').value = u.username || '';
+
+  // Stats
+  if (u.created_at) {
+    const days = Math.floor((Date.now() - new Date(u.created_at)) / 86400000);
+    document.getElementById('statDays').textContent = days;
+  }
+  // Messages/chats are approximate from credits used
+  const creditsUsed = Math.max(0, (getPlanCredits(u.plan) - (u.credits || 0)));
+  document.getElementById('statMessages').textContent = creditsUsed;
+  document.getElementById('statChats').textContent = Math.max(1, Math.floor(creditsUsed / 8));
+}
+
+function getPlanCredits(plan) {
+  const map = { free: 50, pro: 1000, max: 5000, ultra: -1 };
+  return map[plan] || 50;
+}
+
+function updateHeader(u) {
+  const actions = document.getElementById('headerActions');
+  actions.innerHTML = `
+    <a href="/profile.html" class="user-menu">
+      <div class="user-menu-avatar">${(u.username || 'U').slice(0,2).toUpperCase()}</div>
+      ${u.username || 'Profile'}
+    </a>
+    <button onclick="logout()" class="btn-header-login" style="border:none;cursor:pointer;background:transparent">Log out</button>
+  `;
+}
+
+// ── Save Settings ──────────────────────────────────────────────────────
+async function saveSettings() {
+  const btn = document.getElementById('btnSave');
+  const username = document.getElementById('inputUsername').value.trim();
+  const currentPw = document.getElementById('inputCurrentPw').value;
+  const newPw = document.getElementById('inputNewPw').value;
+  const confirmPw = document.getElementById('inputConfirmPw').value;
+
+  if (!username || username.length < 2) {
+    toast('Username must be at least 2 characters', 'error'); return;
+  }
+
+  const payload = { username };
+
+  if (newPw || currentPw) {
+    if (!currentPw) { toast('Enter your current password', 'error'); return; }
+    if (newPw.length < 6) { toast('New password must be at least 6 characters', 'error'); return; }
+    if (newPw !== confirmPw) { toast('Passwords do not match', 'error'); return; }
+    payload.password = newPw;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const r = await fetch('/api/user/update', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if (r.ok) {
+      user = data;
+      renderProfile(user);
+      updateHeader(user);
+      document.getElementById('inputCurrentPw').value = '';
+      document.getElementById('inputNewPw').value = '';
+      document.getElementById('inputConfirmPw').value = '';
+      toast('Profile updated successfully', 'success');
+    } else {
+      toast(data.error || 'Update failed', 'error');
+    }
+  } catch(e) {
+    toast('Network error', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
+  }
+}
+
+// ── Delete Account ─────────────────────────────────────────────────────
+function showDeleteModal() {
+  document.getElementById('deleteModal').classList.add('show');
+}
+function hideDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('show');
+}
+async function deleteAccount() {
+  try {
+    const r = await fetch('/api/user/delete', {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    if (r.ok) {
+      toast('Account deleted. Redirecting…', 'info');
+      setTimeout(() => window.location.href = '/index.html', 1500);
+    } else {
+      toast('Failed to delete account', 'error');
+      hideDeleteModal();
+    }
+  } catch(e) {
+    toast('Network error', 'error');
+    hideDeleteModal();
+  }
+}
+
+// ── Plan selection ─────────────────────────────────────────────────────
+function selectPlan(plan) {
+  if (user && user.plan === plan) return;
+  toast(`Plan upgrade to ${capitalize(plan)} coming soon!`, 'info');
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/index.html';
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function getAvatar(name) {
+  const emojis = ['🦊','🐺','🦁','🐯','🐻','🦝','🐼','🦄','🐸','🦋','🐙','🦈'];
+  const idx = (name || 'U').charCodeAt(0) % emojis.length;
+  return emojis[idx];
+}
+
+function capitalize(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+}
+
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+    el.style.transition = 'all 0.3s';
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+}
+
+// Close modal on overlay click
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) hideDeleteModal();
+});
+
+// Run
+init();
+</script>
+</body>
+</html>
