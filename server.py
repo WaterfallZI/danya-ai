@@ -133,9 +133,31 @@ class Message(db.Model):
 
 with app.app_context():
     db.create_all()
-    if not User.query.filter_by(email=ADMIN_EMAIL).first():
-        a = User(email=ADMIN_EMAIL, username='Admin', credits=-1, bonus_credits=0, plan='ultra', is_admin=True)
-        a.set_password(ADMIN_PASS); db.session.add(a); db.session.commit()
+    # SQLite migration — add missing columns
+    try:
+        import sqlite3
+        db_path = os.path.join(os.path.dirname(__file__), 'instance', 'danya.db')
+        if not os.path.exists(os.path.dirname(db_path)):
+            db_path = 'danya.db'
+        if os.path.exists(db_path):
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            cols = [r[1] for r in cur.execute("PRAGMA table_info(users)").fetchall()]
+            if 'bonus_credits' not in cols:
+                cur.execute("ALTER TABLE users ADD COLUMN bonus_credits INTEGER DEFAULT 0")
+            if 'is_admin' not in cols:
+                cur.execute("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0")
+            conn.commit(); conn.close()
+    except Exception as e:
+        app.logger.warning(f'Migration: {e}')
+    # Create admin
+    try:
+        if not User.query.filter_by(email=ADMIN_EMAIL).first():
+            a = User(email=ADMIN_EMAIL, username='Admin', credits=-1, bonus_credits=0, plan='ultra', is_admin=True)
+            a.set_password(ADMIN_PASS); db.session.add(a); db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.warning(f'Admin creation skipped: {e}')
 
 
 # в”Ђв”Ђ Auth в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
