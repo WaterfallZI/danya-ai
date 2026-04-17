@@ -41,8 +41,8 @@ MODELS = {
     'danya-coala-4.8':  {'model': 'llama-3.3-70b-versatile', 'cost': 10,  'tier': 'free'},
     'danya-coala-5.0':  {'model': 'llama-3.3-70b-versatile', 'cost': 50,  'tier': 'pro'},
     'danya-ai-5.5':     {'model': 'llama-3.3-70b-versatile', 'cost': 80,  'tier': 'pro'},
-    'danya-5.5-pro':    {'model': 'qwen-qwq-32b',            'cost': 100, 'tier': 'pro'},
-    'danya-6-turbo-pro':{'model': 'qwen-qwq-32b',            'cost': 150, 'tier': 'pro'},
+    'danya-5.5-pro':    {'model': 'llama-3.3-70b-versatile', 'cost': 100, 'tier': 'pro'},
+    'danya-6-turbo-pro':{'model': 'llama-3.3-70b-versatile', 'cost': 150, 'tier': 'pro'},
 }
 
 SYSTEM_PROMPTS = {
@@ -298,8 +298,14 @@ def send_message(user, cid):
     groq_msgs = [{'role': 'system', 'content': SYSTEM_PROMPTS.get(model, SYSTEM_PROMPTS['danya-2.5-turbo'])}]
     groq_msgs += [{'role': m['role'], 'content': m['content']} for m in history if m['role'] in ('user', 'assistant')]
 
+    # qwen-qwq-32b doesn't support temperature/max_tokens the same way
+    is_qwen = cfg['model'] == 'qwen-qwq-32b'
+
     headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
-    payload = {'model': cfg['model'], 'messages': groq_msgs, 'temperature': 0.7, 'max_tokens': 4096, 'stream': stream}
+    payload = {'model': cfg['model'], 'messages': groq_msgs, 'stream': stream}
+    if not is_qwen:
+        payload['temperature'] = 0.7
+        payload['max_tokens'] = 4096
 
     try:
         if stream:
