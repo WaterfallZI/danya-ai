@@ -1,6 +1,6 @@
-"""
-Danya AI — Chat Server
-Full ChatGPT-like experience with Groq backend
+﻿"""
+Danya AI вЂ” Chat Server
+Full ChatGPT-like experience with OpenRouter backend
 """
 from flask import Flask, request, jsonify, session, send_from_directory, Response, stream_with_context
 from flask_cors import CORS
@@ -26,23 +26,23 @@ app.config.update(SQLALCHEMY_DATABASE_URI=_db_url, SQLALCHEMY_TRACK_MODIFICATION
 CORS(app, supports_credentials=True, origins=os.environ.get('ALLOWED_ORIGINS', '*').split(','))
 db = SQLAlchemy(app)
 
-# ── Config ────────────────────────────────────────────────────────────
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
-GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions'
-ADMIN_EMAIL  = os.environ.get('ADMIN_EMAIL', 'admin@danya.ai')
-ADMIN_PASS   = os.environ.get('ADMIN_PASSWORD', 'admin2026')
+# в”Ђв”Ђ Config в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+OPENROUTER_URL     = 'https://openrouter.ai/api/v1/chat/completions'
+ADMIN_EMAIL        = os.environ.get('ADMIN_EMAIL', 'admin@danya.ai')
+ADMIN_PASS         = os.environ.get('ADMIN_PASSWORD', 'admin2026')
 
 MODELS = {
-    'danya-1.0':        {'model': 'llama-3.1-8b-instant',    'cost': 1,   'tier': 'free'},
-    'danya-1.7-mj':     {'model': 'llama-3.1-8b-instant',    'cost': 1,   'tier': 'free'},
-    'danya-2.5-turbo':  {'model': 'llama-3.3-70b-versatile', 'cost': 1,   'tier': 'free'},
-    'danya-coala-3.7':  {'model': 'llama-3.1-8b-instant',    'cost': 1,   'tier': 'free'},
-    'danya-g-4.4':      {'model': 'llama-3.3-70b-versatile', 'cost': 5,   'tier': 'free'},
-    'danya-coala-4.8':  {'model': 'llama-3.3-70b-versatile', 'cost': 10,  'tier': 'free'},
-    'danya-coala-5.0':  {'model': 'llama-3.3-70b-versatile', 'cost': 50,  'tier': 'pro'},
-    'danya-ai-5.5':     {'model': 'llama-3.3-70b-versatile', 'cost': 80,  'tier': 'pro'},
-    'danya-5.5-pro':    {'model': 'llama-3.3-70b-versatile', 'cost': 100, 'tier': 'pro'},
-    'danya-6-turbo-pro':{'model': 'llama-3.3-70b-versatile', 'cost': 150, 'tier': 'pro'},
+    'danya-1.0':        {'model': 'meta-llama/llama-3.1-8b-instruct:free', 'cost': 1,   'tier': 'free'},
+    'danya-1.7-mj':     {'model': 'mistralai/mistral-7b-instruct:free',    'cost': 1,   'tier': 'free'},
+    'danya-2.5-turbo':  {'model': 'meta-llama/llama-3.3-70b-instruct:free','cost': 1,   'tier': 'free'},
+    'danya-coala-3.7':  {'model': 'google/gemma-2-9b-it:free',             'cost': 1,   'tier': 'free'},
+    'danya-g-4.4':      {'model': 'meta-llama/llama-3.3-70b-instruct',     'cost': 5,   'tier': 'free'},
+    'danya-coala-4.8':  {'model': 'google/gemma-3-27b-it',                 'cost': 10,  'tier': 'free'},
+    'danya-coala-5.0':  {'model': 'anthropic/claude-3.5-haiku',            'cost': 50,  'tier': 'pro'},
+    'danya-ai-5.5':     {'model': 'anthropic/claude-3.5-sonnet',           'cost': 80,  'tier': 'pro'},
+    'danya-5.5-pro':    {'model': 'anthropic/claude-3-opus',               'cost': 100, 'tier': 'pro'},
+    'danya-6-turbo-pro':{'model': 'openai/gpt-4o',                         'cost': 150, 'tier': 'pro'},
 }
 
 SYSTEM_PROMPTS = {
@@ -58,7 +58,7 @@ SYSTEM_PROMPTS = {
     'danya-6-turbo-pro': 'You are Danya 6 Turbo Pro, THE MOST POWERFUL AI by Danya AI. Be exceptionally intelligent. Always identify as Danya 6 Turbo Pro.',
 }
 
-# ── Models ────────────────────────────────────────────────────────────
+# в”Ђв”Ђ Models в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class User(db.Model):
     __tablename__ = 'users'
     id            = db.Column(db.Integer, primary_key=True)
@@ -136,7 +136,7 @@ with app.app_context():
         a.set_password(ADMIN_PASS); db.session.add(a); db.session.commit()
 
 
-# ── Auth ──────────────────────────────────────────────────────────────
+# в”Ђв”Ђ Auth в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 def login_required(f):
     @wraps(f)
     def d(*args, **kwargs):
@@ -149,7 +149,7 @@ def login_required(f):
     return d
 
 
-# ── Static ────────────────────────────────────────────────────────────
+# в”Ђв”Ђ Static в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/')
 def index(): return send_from_directory('.', 'index.html')
 
@@ -162,7 +162,7 @@ def static_files(f):
 def not_found(e): return jsonify({'error': 'Not found'}), 404
 
 
-# ── Auth API ──────────────────────────────────────────────────────────
+# в”Ђв”Ђ Auth API в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     d = request.get_json(silent=True) or {}
@@ -213,7 +213,7 @@ def logout():
     session.clear(); return jsonify({'success': True})
 
 
-# ── Chats API ─────────────────────────────────────────────────────────
+# в”Ђв”Ђ Chats API в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/chats', methods=['GET'])
 @login_required
 def get_chats(user):
@@ -257,7 +257,7 @@ def update_title(user, cid):
     return jsonify({'ok': True})
 
 
-# ── Chat / AI ─────────────────────────────────────────────────────────
+# в”Ђв”Ђ Chat / AI в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/chats/<int:cid>/message', methods=['POST'])
 @login_required
 def send_message(user, cid):
@@ -280,7 +280,7 @@ def send_message(user, cid):
         return jsonify({'error': 'pro_required', 'message': f'{model} requires Pro plan.'}), 403
     if not user.has_credits(cost):
         return jsonify({'error': 'no_credits', 'message': f'Need {cost} credits.'}), 402
-    if not GROQ_API_KEY:
+    if not OPENROUTER_API_KEY:
         return jsonify({'error': 'AI service not configured'}), 503
 
     # Save user message
@@ -290,7 +290,7 @@ def send_message(user, cid):
     chat.updated_at = datetime.utcnow()
     # Auto-title from first message
     if chat.title == 'New chat' and content:
-        chat.title = content[:60] + ('…' if len(content) > 60 else '')
+        chat.title = content[:60] + ('вЂ¦' if len(content) > 60 else '')
     db.session.commit()
 
     # Build messages for Groq
@@ -299,21 +299,28 @@ def send_message(user, cid):
     groq_msgs += [{'role': m['role'], 'content': m['content']} for m in history if m['role'] in ('user', 'assistant')]
 
     # qwen-qwq-32b doesn't support temperature/max_tokens the same way
-    is_qwen = cfg['model'] == 'qwen-qwq-32b'
+    is_qwen = False  # not used with OpenRouter
 
-    headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
-    payload = {'model': cfg['model'], 'messages': groq_msgs, 'stream': stream}
-    if not is_qwen:
-        payload['temperature'] = 0.7
-        payload['max_tokens'] = 4096
+    headers = {
+        'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://danya-ai.up.railway.app',
+        'X-Title': 'Danya AI',
+    }
+    payload = {'model': cfg['model'], 'messages': groq_msgs, 'stream': stream,
+               'temperature': 0.7, 'max_tokens': 4096}
 
     try:
         if stream:
             def generate():
                 full = ''
                 try:
-                    resp = requests.post(GROQ_URL, headers=headers, json=payload, stream=True, timeout=60)
+                    resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, stream=True, timeout=60)
                     if not resp.ok:
+                        if resp.status_code == 400:
+                            yield f"data: {json.dumps({'delta': 'РР·РІРёРЅРё, РЅРµ РјРѕРіСѓ РѕС‚РІРµС‚РёС‚СЊ РЅР° СЌС‚Рѕ СЃРѕРѕР±С‰РµРЅРёРµ.'})}\n\n"
+                            yield f"data: {json.dumps({'done': True, 'credits': user.to_dict()['total_credits']})}\n\n"
+                            return
                         yield f"data: {json.dumps({'error': f'AI error {resp.status_code}'})}\n\n"
                         return
                     for line in resp.iter_lines():
@@ -328,7 +335,6 @@ def send_message(user, cid):
                                     full += delta
                                     yield f"data: {json.dumps({'delta': delta})}\n\n"
                             except Exception: pass
-                    # Save AI reply
                     if full:
                         ai_msg = Message(chat_id=cid, role='assistant', content=full)
                         db.session.add(ai_msg)
@@ -342,8 +348,10 @@ def send_message(user, cid):
             return Response(stream_with_context(generate()), content_type='text/event-stream',
                 headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
         else:
-            resp = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
+            resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=60)
             if not resp.ok:
+                if resp.status_code == 400:
+                    return jsonify({'reply': 'РР·РІРёРЅРё, РЅРµ РјРѕРіСѓ РѕС‚РІРµС‚РёС‚СЊ РЅР° СЌС‚Рѕ СЃРѕРѕР±С‰РµРЅРёРµ.', 'credits': user.to_dict()['total_credits']})
                 return jsonify({'error': f'AI error {resp.status_code}'}), resp.status_code
             reply = resp.json()['choices'][0]['message']['content']
             ai_msg = Message(chat_id=cid, role='assistant', content=reply)
@@ -360,7 +368,7 @@ def send_message(user, cid):
         return jsonify({'error': str(e)}), 500
 
 
-# ── User ──────────────────────────────────────────────────────────────
+# в”Ђв”Ђ User в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/user/update', methods=['POST'])
 @login_required
 def update_user(user):
@@ -381,10 +389,10 @@ def delete_user(user):
     return jsonify({'success': True})
 
 
-# ── Health ────────────────────────────────────────────────────────────
+# в”Ђв”Ђ Health в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 @app.route('/api/health')
 def health():
-    return jsonify({'status': 'ok', 'groq': bool(GROQ_API_KEY), 'models': list(MODELS.keys())})
+    return jsonify({'status': 'ok', 'groq': bool(OPENROUTER_API_KEY), 'models': list(MODELS.keys())})
 
 
 if __name__ == '__main__':
